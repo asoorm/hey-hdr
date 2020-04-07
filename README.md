@@ -15,6 +15,12 @@ hey -o csv http://TARGET_URL > example.csv
 cat example.csv | go run hey-hdr
 ```
 
+or
+
+```shell script
+hey -o csv -n 10000 http://TARGET_URL | go run hey-hdr.go -o hdr.csv
+```
+
 ## Motivation
 
 It's written in Go & is pretty similar to Apache Bench in it's capabilities, in that it was built to replace AB.
@@ -45,8 +51,8 @@ We need to look deeper than just the 99th %ile. Because in here, we can better s
 Fortunately, Hey allows you to send the raw request stats to a CSV file, but this does mean that you need to parse
 the output yourself.
 
-As a PoC, `hey-hdr` re-calculates the histogram, and we can now look significantly deeper and measure our
-latency to 5 9's of accuracy.
+`hey-hdr` recalculates the histogram, and we can now look significantly deeper and measure our
+latency to 5 nines of accuracy.
 
 ```text
   Count: 200
@@ -60,9 +66,13 @@ latency to 5 9's of accuracy.
  P99999: 58.901ms
 ```
 
+It's also possible to write a [HDRHistogram Plot](http://hdrhistogram.github.io/HdrHistogram/plotFiles.html) file.
+
+![hey-hdr HDRHistogram Plot](hdr-plot-example.png)
+
 ## Next Steps
 
 - [ ] Ability to pass in filename via flag
 - [ ] Build out different histograms per http response code
 - [ ] Ability to output histograms for more than just the request latency
-- [ ] Output to [HDRHistogram Plot](http://hdrhistogram.github.io/HdrHistogram/plotFiles.html)
+- [x] Output to [HDRHistogram Plot](http://hdrhistogram.github.io/HdrHistogram/plotFiles.html)
