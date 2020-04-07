@@ -26,7 +26,7 @@ type hey struct {
 var outFile string
 
 func main() {
-	flag.StringVar(&outFile, "out", "", "file to write hdr to (default: out.csv)")
+	flag.StringVar(&outFile, "out", "", "file to write hdr e.g. `hdr.csv`")
 	flag.Parse()
 
 	var h hey
@@ -88,11 +88,11 @@ func main() {
 
 	total := float64(hist.TotalCount())
 	for _, q := range logarithmic {
-		value := (time.Duration(hist.ValueAtQuantile(q * 100)) * time.Microsecond).Seconds()
+		value := (time.Duration(hist.ValueAtQuantile(q * 100)) * time.Microsecond).Seconds()*1000
 		oneBy := oneByQuantile(q)
 
 		count := int64((q * total) + 0.5) // Count at quantile
-		_, err = fmt.Fprintf(tw, "%f\t%f\t%d\t%f\n", value, q, count, oneBy)
+		_, err = fmt.Fprintf(tw, "%.3f\t%f\t%d\t%f\n", value, q, count, oneBy)
 		fatalOnErr(err)
 	}
 
