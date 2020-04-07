@@ -62,6 +62,7 @@ latency to 5 9's of accuracy.
 
 ## Next Steps
 
+- [ ] Ability to pass in filename via flag
 - [ ] Build out different histograms per http response code
 - [ ] Ability to output histograms for more than just the request latency
-- [ ] Output to [HDRHistogram](https://raw.githubusercontent.com/HdrHistogram/HdrHistogram/master/GoogleChartsExample/example1.txt) for visualisation
+- [ ] Output to [HDRHistogram Plot](http://hdrhistogram.github.io/HdrHistogram/plotFiles.html)
