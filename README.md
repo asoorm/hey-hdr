@@ -25,9 +25,12 @@ hey -n 10000 -c 30 -o csv -n 10000 http://TARGET_URL | go run hey-hdr.go -out ex
 
 - [Output from hey](example.csv)
 - [HDR Histogram Data](example.hdr.csv) - load this file in [HDRHistogram Plot](http://hdrhistogram.github.io/HdrHistogram/plotFiles.html)
+
+![HDR Histogram Example](example.hdr.png)
+
 - [Plot](example.scatter.png)
 
-![Plot](example.scatter.png)
+![Scatter Example](example.scatter.png)
 
 - hey-hdr cli output:
 ```text
