@@ -5,20 +5,42 @@ The Extension to the excellent https://github.com/rakyll/hey load generator.
 ## Usage
 
 ```shell script
-hey -o csv http://TARGET_URL | go run hey-hdr
+hey -n 1000 -c 30 -o csv http://TARGET_URL | go run hey-hdr.go
 ```
 
 or
 
 ```shell script
-hey -o csv http://TARGET_URL > example.csv
-cat example.csv | go run hey-hdr
+hey -n 10000 -c 30 -o csv http://TARGET_URL > example.csv
+cat example.csv | go run hey-hdr.go
 ```
 
 or
 
 ```shell script
-hey -o csv -n 10000 http://TARGET_URL | go run hey-hdr.go -o hdr.csv
+hey -n 10000 -c 30 -o csv -n 10000 http://TARGET_URL | go run hey-hdr.go -out example
+```
+
+## Outputs
+
+- [Output from hey](example.csv)
+- [HDR Histogram Data](example.hdr.csv) - load this file in [HDRHistogram Plot](http://hdrhistogram.github.io/HdrHistogram/plotFiles.html)
+- [Plot](example.scatter.png)
+
+![Plot](example.scatter.png)
+
+- hey-hdr cli output:
+```text
+hey-hdr % cat example.csv | go run hey-hdr.go -out example
+  Count: 10000
+    Max: 34.101ms
+   Mean: 6.659ms
+    P50: 5.9ms
+    P95: 12.1ms
+    P99: 17.5ms
+   P999: 32.599ms
+  P9999: 34.001ms
+ P99999: 34.101ms
 ```
 
 ## Motivation
@@ -66,13 +88,10 @@ latency to 5 nines of accuracy.
  P99999: 58.901ms
 ```
 
-It's also possible to write a [HDRHistogram Plot](http://hdrhistogram.github.io/HdrHistogram/plotFiles.html) file.
-
-![hey-hdr HDRHistogram Plot](hdr-plot-example.png)
-
 ## Next Steps
 
 - [ ] Ability to pass in filename via flag
 - [ ] Build out different histograms per http response code
 - [ ] Ability to output histograms for more than just the request latency
+- [x] Plot latency over time
 - [x] Output to [HDRHistogram Plot](http://hdrhistogram.github.io/HdrHistogram/plotFiles.html)

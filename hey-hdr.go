@@ -5,6 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/codahale/hdrhistogram"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 	"io"
 	"os"
 	"strconv"
@@ -26,18 +30,24 @@ type hey struct {
 var outFile string
 
 func main() {
-	flag.StringVar(&outFile, "out", "", "file to write hdr e.g. `hdr.csv`")
+	flag.StringVar(&outFile, "out", "", "file to write hdr e.g. `foo`, will generate foo.hdr.csv and foo.scatter.png")
 	flag.Parse()
 
 	var h hey
-
+	var points plotter.XYs
 	hist := hdrhistogram.New(0, 6E10, 4)
+
+	 yMin := float64(0)
+	 yMax := float64(0)
+	 xMin := float64(0)
+	 xMax := float64(0)
 
 	switch flag.NArg() {
 	case 0:
 		r := csv.NewReader(os.Stdin)
 		// Read and throw away header
 		_, _ = r.Read()
+		first := true
 		for {
 			record, err := r.Read()
 			if err == io.EOF {
@@ -48,15 +58,22 @@ func main() {
 			responseTime, _ := strconv.ParseFloat(record[0], 64)
 			h.ResponseTime = int64(1E6 * responseTime)
 			hist.RecordValue(h.ResponseTime)
-			//fmt.Printf("RAW: %s RECORDING: %d\n", record[0], h.ResponseTime)
-		}
 
-		//bars := hist.Distribution()
-		//for k, v := range bars {
-		//	if v.Count > 0 {
-		//		fmt.Printf("bar: %d, %#v\n", k, v)
-		//	}
-		//}
+			offset, _ := strconv.ParseFloat(record[7], 64)
+			h.Offset = offset
+
+			if first {
+				yMin = responseTime * 1000
+				xMin = offset
+				first = false
+			}
+
+			if responseTime * 1000 > yMax {
+				yMax = responseTime * 1000
+			}
+			xMax = h.Offset
+			points = append(points, plotter.XY{X: h.Offset, Y: responseTime * 1000})
+		}
 
 		fmt.Fprintf(os.Stdout, "  Count: %d\n", hist.TotalCount())
 		fmt.Fprintf(os.Stdout, "    Max: %s\n", time.Duration(hist.Max())*time.Microsecond)
@@ -74,11 +91,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// exit if we don't want to write output to disk
 	if outFile == "" {
 		os.Exit(0)
 	}
 
-	file, err := os.Create(outFile)
+	file, err := os.Create(outFile+".hdr.csv")
 	fatalOnErr(err)
 	defer file.Close()
 
@@ -92,11 +110,43 @@ func main() {
 		oneBy := oneByQuantile(q)
 
 		count := int64((q * total) + 0.5) // Count at quantile
-		_, err = fmt.Fprintf(tw, "%.3f\t%f\t%d\t%f\n", value, q, count, oneBy)
+		_, err = fmt.Fprintf(tw, "%.3f\t%f\t%d\t%.2f\n", value, q, count, oneBy)
 		fatalOnErr(err)
 	}
 
 	fatalOnErr(tw.Flush())
+
+	p, err := plot.New()
+	fatalOnErr(err)
+
+	p.Title.Text = "Response Time (s)"
+	p.X.Label.Text = "t (s)"
+	p.Y.Label.Text = "Response Time (ms)"
+	p.X.Min = xMin
+	p.X.Max = xMax
+	p.Y.Min = yMin
+	p.Y.Max = yMax
+
+	fatalOnErr(plotutil.AddScatters(p,
+		"requests", points,
+	))
+
+
+	plotterFunc := func(per float64) *plotter.Function {
+		return plotter.NewFunction(func(f float64) float64 {
+			return float64(hist.ValueAtQuantile(per))/1000
+		})
+	}
+
+	// Save the plot to a PNG file.
+	fatalOnErr(plotutil.AddLines(p,
+		"P50", plotterFunc(50.0),
+		"P90", plotterFunc(90.0),
+		"P95", plotterFunc(95.0),
+		"P99", plotterFunc(99.0),
+		"P999", plotterFunc(99.9)))
+
+	fatalOnErr(p.Save(20*vg.Centimeter, 20*vg.Centimeter, outFile + ".scatter.png"))
 }
 
 func oneByQuantile(q float64) float64 {
